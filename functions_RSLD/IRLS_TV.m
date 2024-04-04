@@ -1,6 +1,6 @@
 
 % Total Variation: 0.5*||A*u(:)-b||_2^2 + lambda*TV(u)
-function u = IRLS_TV(b,A,mu,M,N,tol,mask,minimask)
+function u = IRLS_TV(b,A,mu,M,N,tol,minimask)
 
 AtA = A'*A;
 Atb = A'*b;
@@ -18,22 +18,20 @@ D(N,N) = 0;
 Dy = kron(D,speye(M));
 
 D = [Dx' Dy']';
-
+% 
 ite_irls = 0;
 error = 1;
 
 %[u,~] = cgs(AtA+mu*(D')*D,Atb);
 [u,~] = cgs(AtA,Atb);
-G(1) = 1/2*(norm( (b - A*u) ))^2 + mu*TVcalc_isotropic(u,M,N,minimask);
+G(1) = 1/2*(norm( (b - A*u) ))^2 + mu*TVcalc_isotropic(u(1:M*N),M,N,minimask);
 
 while error > tol && ite_irls < 200
     
-    X = reshape(u,M,N);
+    X = reshape(u(1:M*N),M,N); % MODIFIED TO IGNORE OTHER TERMS
     ite_irls = ite_irls + 1;
-    Dh = diff(X,[],1);
-    Dh = [Dh;zeros(1,N)];
-    Dv = diff(X,[],2);
-    Dv = [Dv zeros(M,1)];
+    Dh = [diff(X,[],1); zeros(1,N)];
+    Dv = [diff(X,[],2), zeros(M,1)];
     
     vksquare = Dh.^2 + Dv.^2;
     vksquare = vksquare(:);
@@ -49,8 +47,10 @@ while error > tol && ite_irls < 200
     omega = spdiags(P,0,omega);   % sparse diagonal of P values instead of ones.
     W = kron(speye(2),omega);
     
+    disp(size(D'*W*D))
+    disp(size(AtA))
     [u,~] = cgs(AtA + mu*D'*W*D, Atb, 1e-6, 200);
-    G(ite_irls+1,1) = 1/2*(norm( (b - A*u) ))^2 + mu*TVcalc_isotropic(u,M,N,minimask);
+    G(ite_irls+1,1) = 1/2*(norm( (b - A*u) ))^2 + mu*TVcalc_isotropic(u(1:M*N),M,N,minimask);
     error = abs(G(ite_irls+1) - G(ite_irls));
     %error = (G(ite_irls+1) - G(ite_irls)).^2/G(ite_irls).^2;
     

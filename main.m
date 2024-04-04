@@ -46,3 +46,10 @@ axis image;
 title('k_z')
 xlabel('Lateral'), ylabel('Axial'),
 
+%%
+mu = 1;
+M = size_out(1);
+N = size_out(2);
+tol = 1e-5;
+minimask = ones(M*N,1);
+u = IRLS_TV(bx_large,Ax_large,mu,M,N,tol,minimask);
