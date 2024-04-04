@@ -76,7 +76,7 @@ function [grad_z,grad_x,k,sws_matrix] = phase_estimator_QR_bigmat(u, w_kernel,f_
     for ii = 1:st:og_size(1)
 
         for jj = 1:st:og_size(2) %% for faster computing pararell toolbox
-            
+
             area_z = angle_z(ii: ii+w_kernel(1)-1,jj:jj+w_kernel(2)-1); % Window kernel
             bz_small = area_z(:);
             area_x = angle_x(ii: ii+w_kernel(1)-1,jj:jj+w_kernel(2)-1); % Window kernel
@@ -119,13 +119,16 @@ function [grad_z,grad_x,k,sws_matrix] = phase_estimator_QR_bigmat(u, w_kernel,f_
 %     disp(cont_kernel);
 
     %%%%% FOR x %%%%%
-    results_x = Ax_large\bx_large;  
+    
+    % results_x = Ax_large\bx_large;  
+    results_x = minres(Ax_large'*Ax_large,Ax_large'*bx_large);  
     
     res3D_x  = reshape(results_x, [3, size_out(2), size_out(1)]); 
     res3D_x = permute(res3D_x, [3 2 1]); 
     
     %%%%% FOR z %%%%%
-    results_z = Az_large\bz_large;  
+    % results_z = Az_large\bz_large;
+    results_z = minres(Az_large'*Az_large,Az_large'*bz_large);
     
     res3D_z  = reshape(results_z, [3, size_out(2), size_out(1)]); 
     res3D_z = permute(res3D_z, [3 2 1]);
@@ -136,9 +139,9 @@ function [grad_z,grad_x,k,sws_matrix] = phase_estimator_QR_bigmat(u, w_kernel,f_
     
     % ----- MedFilt  ----
     med_wind = floor (2.5/f_v/dinf.dx)*2+1; %the median window contains at least a wavelenght
-%     k2_med = medfilt2(phase_grad_2,[med_wind med_wind],'symmetric')/constant; % better constant apply before
     k2_med = medfilt2(phase_grad_2,[med_wind med_wind],'symmetric');
     k = sqrt(k2_med);
     % --------------------
+    % k = sqrt(phase_grad_2);
     sws_matrix = (2*pi*f_v)./k;   
 end

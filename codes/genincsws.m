@@ -220,7 +220,7 @@ figure,
 sgtitle('\bf Results ESTIMATOR QRv2')
 set(gcf, 'Position',[100 200 1500 500]);
 
- Create first subplot for Particle Velocity
+% Create first subplot for Particle Velocity
 subplot(121),
 imagesc(R_Field.x*cm, R_Field.z*cm, real(R_Field.pv_complexZ(:,:,1)));
 xlabel('Lateral'), ylabel('Axial'), title('Part. Veloc.');

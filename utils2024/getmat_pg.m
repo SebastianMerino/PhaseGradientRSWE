@@ -1,4 +1,4 @@
-function [Ax_large, Az_large, bx_large, bz_large, size_out] = getmat_pg(u, w_kernel, f_v, dinf, og_size, stride)
+function [Ax_large, Az_large, bx_large, bz_large, size_out] = getmat_pg(u, w_kernel, dinf, og_size, stride)
 % function [Ax_large, Az_large, bx_large, bz_large]  = getmat_pg(u, w_kernel, freq, dinf, og_size, stride)%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % Function that yields the matrixes Ax Az and vectors bx & bz of the 
 % PHASE GRADIENT FRAMEWORK BY J. ORMACHEA
@@ -43,18 +43,16 @@ function [Ax_large, Az_large, bx_large, bz_large, size_out] = getmat_pg(u, w_ker
     z_axis = linspace(-(w_kernel(1)-1)/2,(w_kernel(1)-1)/2,w_kernel(1))*res_z; 
     x_axis = linspace(-(w_kernel(1)-1)/2,(w_kernel(1)-1)/2,w_kernel(2))*res_x; 
     
-    
+    %% Initializing vectors and matrixes    
     angle_u = angle(u);
     
     [X, Z] = meshgrid(x_axis,z_axis);
     A_small = [X(:) Z(:) ones(length(x_axis)*length(z_axis),1)]; 
-    [numRows, numCols] = size(A_small); % [ww, 3]
+    [numRows, ~] = size(A_small); % [ww, 3]
 
-    %% HELP FOR DIMENSIONS %% THEORY
+    %% HELP FOR DIMENSIONS %% % THEORY
     size_mirror = size(u); % ogsize + w_kernel - 1; %  = size (u)
     numkernels = floor( (size_mirror - w_kernel)./st + 1 ); % numKernels
-    overlap_ax1 = 1 - st/w_kernel(1); 
-    overlap_la1 = 1 - st/w_kernel(2);
     size_out = floor( (og_size - 1)./st + 1 );
 
     numSubMatrices = prod(numkernels);
@@ -63,9 +61,9 @@ function [Ax_large, Az_large, bx_large, bz_large, size_out] = getmat_pg(u, w_ker
     bz_large = zeros(numSubMatrices*numRows, 1); 
     Ax_large = Az_large;
     bx_large = bz_large;
-	     
-    angle_z = unwrap(angle_u,[], 1);
-    angle_x = unwrap(angle_u,[], 2);
+    	     
+    angle_z = unwrap(angle_u,[],1);
+    angle_x = unwrap(angle_u,[],2);
     cont_kernel = 1; 
     for ii = 1:st:og_size(1)
 
@@ -76,9 +74,9 @@ function [Ax_large, Az_large, bx_large, bz_large, size_out] = getmat_pg(u, w_ker
             area_x = angle_x(ii: ii+w_kernel(1)-1,jj:jj+w_kernel(2)-1); % Window kernel
             bx_small = area_x(:);
 
+            %%%%%%%%%%%% BETTER EFFICIENCY v2.0 %%%%%%%%%%%%
             rowStart = (cont_kernel-1)*numRows + 1; % size ww
             rowEnd = rowStart + numRows - 1;
-%             colStart = (cont_kernel-1)*numCols + 1; % size 3
 
             bz_large(rowStart:rowEnd) = bz_small;
             bx_large(rowStart:rowEnd) = bx_small;
