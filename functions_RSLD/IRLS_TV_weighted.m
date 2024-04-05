@@ -45,7 +45,6 @@ G(1) = 1/2*(norm( (b - A*u) ))^2 + mu*TVcalc_isotropic(u,M,N,weights);
 
 while error > tol && ite_irls < 200
     
-    X = reshape(u,M,N);
     ite_irls = ite_irls + 1;
     Dh = Dx*u;
     Dv = Dy*u;

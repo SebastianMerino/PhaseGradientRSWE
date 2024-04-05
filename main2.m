@@ -19,7 +19,7 @@ og_size = size(u);
 extended_u = padarray(u,[(w_kernel(1)-1)/2 (w_kernel(2)-1)/2],'symmetric');
 
 tic
-[Ax_large, Az_large, bx_large, bz_large, size_out] = getmat_pg_v2(extended_u,...
+[Ax_large, Az_large, bx_large, bz_large, size_out] = getmat_pg_v3(extended_u,...
     w_kernel, dinf, og_size, stride);
 toc
 
@@ -28,13 +28,13 @@ tic
 results_x = minres(Ax_large'*Ax_large,Ax_large'*bx_large);
 results_z = minres(Az_large'*Az_large,Az_large'*bz_large);
 toc
-results_x = reshape(results_x,[size_out, 3]);
-results_z = reshape(results_z,[size_out, 3]);
+results_x = reshape(results_x,[size_out, 2]);
+results_z = reshape(results_z,[size_out, 2]);
 
 
 %% Unwrap x system
-figure('Units','centimeters', 'Position',[5 5 30 10]),
-tiledlayout(1,3)
+figure('Units','centimeters', 'Position',[5 5 20 10]),
+tiledlayout(1,2)
 nexttile,
 imagesc(x*cm, z*cm, abs(results_x(:,:,1)), [0 4000]);
 colormap(gca, parula); % Apply jet colormap to the current axes
@@ -48,38 +48,23 @@ imagesc(x*cm, z*cm, abs(results_x(:,:,2)));
 colormap(gca, parula); % Apply jet colormap to the current axes
 colorbar;
 axis image;
-title('k_z')
-xlabel('Lateral'), ylabel('Axial'),
-
-nexttile,
-imagesc(x*cm, z*cm, abs(results_x(:,:,3)));
-colormap(gca, parula); % Apply jet colormap to the current axes
-colorbar;
-axis image;
 title('c')
 xlabel('Lateral'), ylabel('Axial'),
 
+
 %% Unwrap z system
-figure('Units','centimeters', 'Position',[5 5 30 10]),
-tiledlayout(1,3)
+figure('Units','centimeters', 'Position',[5 5 20 10]),
+tiledlayout(1,2)
 nexttile,
 imagesc(x*cm, z*cm, abs(results_z(:,:,1)));
 colormap(gca, parula); % Apply jet colormap to the current axes
 colorbar;
 axis image;
-title('k_x')
-xlabel('Lateral'), ylabel('Axial'),
-
-nexttile,
-imagesc(x*cm, z*cm, abs(results_z(:,:,2)));
-colormap(gca, parula); % Apply jet colormap to the current axes
-colorbar;
-axis image;
 title('k_z')
 xlabel('Lateral'), ylabel('Axial'),
 
 nexttile,
-imagesc(x*cm, z*cm, abs(results_z(:,:,3)));
+imagesc(x*cm, z*cm, abs(results_z(:,:,2)));
 colormap(gca, parula); % Apply jet colormap to the current axes
 colorbar;
 axis image;
@@ -88,11 +73,11 @@ xlabel('Lateral'), ylabel('Axial'),
 
 %% SWS
 grad_x = results_x(:,:,1);
-grad_z = results_z(:,:,2);
+grad_z = results_z(:,:,1);
 phase_grad_2 = (grad_x.^2 + grad_z.^2)/constant;
 
 % ----- MedFilt  ----
-med_wind = floor (2.5/f_v/dinf.dx)*2+1; %the median window contains at least a wavelenght
+med_wind = floor (2.5/f_v/dinf.dx )*2+1; %the median window contains at least a wavelenght
 k2_med = medfilt2(phase_grad_2,[med_wind med_wind],'symmetric');
 k = sqrt(k2_med);
 % --------------------
@@ -117,22 +102,26 @@ title('SWS')
 xlabel('Lateral'), ylabel('Axial'),
 
 
-%%
-mu = 0.01;
+%% Solving Inverse x problem
+A1 = Ax_large(:,1:167*167);
+A2 = Ax_large(:,167*167+1:end);
+mu1 = 10.^(-1);
+mu2 = 10.^(0);
 M = size_out(1);
 N = size_out(2);
-tol = 1e-5;
-minimask = ones(M*N*3,1);
-
+tol = 1e-2;
+mask = ones(size(bx_large));
+%
 tic
-u = IRLS_TV_x(bx_large,Ax_large,mu,M,N,tol,minimask);
+[kxx,cx] = AlterOpti_ADMM(A1,A2,bx_large,mu1,mu2,M,N,tol,mask);
 toc
-
-reg_x = reshape(u,[size_out, 3]);
-figure('Units','centimeters', 'Position',[5 5 30 10]),
-tiledlayout(1,3)
+kxx = reshape(kxx,size_out);
+cx = reshape(cx,size_out);
+%%
+figure('Units','centimeters', 'Position',[5 5 20 10]),
+tl = tiledlayout(1,2);
 nexttile,
-imagesc(x*cm, z*cm, abs(reg_x(:,:,1)), [0 4000]);
+imagesc(x*cm, z*cm, abs(kxx), [0 4000]);
 colormap(gca, parula); % Apply jet colormap to the current axes
 colorbar;
 axis image;
@@ -140,17 +129,29 @@ title('k_x')
 xlabel('Lateral'), ylabel('Axial'),
 
 nexttile,
-imagesc(x*cm, z*cm, abs(reg_x(:,:,2)));
-colormap(gca, parula); % Apply jet colormap to the current axes
-colorbar;
-axis image;
-title('k_z')
-xlabel('Lateral'), ylabel('Axial'),
-
-nexttile,
-imagesc(x*cm, z*cm, abs(reg_x(:,:,3)));
+imagesc(x*cm, z*cm, abs(cx));
 colormap(gca, parula); % Apply jet colormap to the current axes
 colorbar;
 axis image;
 title('c')
+xlabel('Lateral'), ylabel('Axial'),
+
+%%
+sws_x = (2*pi*f_v)./kxx;
+figure('Units','centimeters', 'Position',[5 5 20 10]),
+tiledlayout(1,2)
+nexttile,
+imagesc(x*cm, z*cm, real(u(:,:,1)));
+colormap(gca, parula); % Apply jet colormap to the current axes
+colorbar;
+axis image;
+title('k_x')
+xlabel('Lateral'), ylabel('Axial'),
+
+nexttile,
+imagesc(x*cm, z*cm, sws_x, sws_range);
+colormap(gca, turbo); % Apply jet colormap to the current axes
+colorbar;
+axis image;
+title('SWS')
 xlabel('Lateral'), ylabel('Axial'),
