@@ -1,9 +1,10 @@
 clear, clc
+load phasemap.mat
 
 baseDir = 'P:\rswe\dataold\Data800Hz-10000ondas';
-w_kernel = [15,15];
+w_kernel = [15 15];
 constant = 0.33;
-stride = 3;
+stride = round(w_kernel)/5;
 
 % plotting const
 cm = 1e2;
@@ -16,8 +17,29 @@ dinf.dz = data.z(2) - data.z(1);
 f_v = data.freq;
 x = data.x; z = data.z;
 og_size = size(u);
-extended_u = padarray(u,[(w_kernel(1)-1)/2 (w_kernel(2)-1)/2],'symmetric');
 
+%% Observing data
+figure('Units','centimeters', 'Position',[5 5 20 10]),
+tiledlayout(1,2)
+nexttile,
+imagesc(x*cm, z*cm, real(u(:,:,1)));
+colormap(gca, parula); % Apply jet colormap to the current axes
+colorbar;
+axis image;
+title('PV')
+xlabel('Lateral'), ylabel('Axial'),
+
+nexttile,
+imagesc(x*cm, z*cm, angle(u));
+colormap(gca, phasemap); % Apply jet colormap to the current axes
+colorbar;
+axis image;
+title('Phase')
+xlabel('Lateral'), ylabel('Axial'),
+
+
+%% Getting system
+extended_u = padarray(u,[(w_kernel(1)-1)/2 (w_kernel(2)-1)/2],'symmetric');
 tic
 [Ax_large, Az_large, bx_large, bz_large, size_out] = getmat_pg_v3(extended_u,...
     w_kernel, dinf, og_size, stride);
@@ -36,7 +58,7 @@ results_z = reshape(results_z,[size_out, 2]);
 figure('Units','centimeters', 'Position',[5 5 20 10]),
 tiledlayout(1,2)
 nexttile,
-imagesc(x*cm, z*cm, abs(results_x(:,:,1)), [0 4000]);
+imagesc(x*cm, z*cm, (results_x(:,:,1)), [-4000 4000]);
 colormap(gca, parula); % Apply jet colormap to the current axes
 colorbar;
 axis image;
@@ -44,7 +66,7 @@ title('k_x')
 xlabel('Lateral'), ylabel('Axial'),
 
 nexttile,
-imagesc(x*cm, z*cm, abs(results_x(:,:,2)));
+imagesc(x*cm, z*cm, (results_x(:,:,2)));
 colormap(gca, parula); % Apply jet colormap to the current axes
 colorbar;
 axis image;
@@ -56,7 +78,7 @@ xlabel('Lateral'), ylabel('Axial'),
 figure('Units','centimeters', 'Position',[5 5 20 10]),
 tiledlayout(1,2)
 nexttile,
-imagesc(x*cm, z*cm, abs(results_z(:,:,1)));
+imagesc(x*cm, z*cm, (results_z(:,:,1)), [-4000 4000]);
 colormap(gca, parula); % Apply jet colormap to the current axes
 colorbar;
 axis image;
@@ -64,7 +86,7 @@ title('k_z')
 xlabel('Lateral'), ylabel('Axial'),
 
 nexttile,
-imagesc(x*cm, z*cm, abs(results_z(:,:,2)));
+imagesc(x*cm, z*cm, (results_z(:,:,2)));
 colormap(gca, parula); % Apply jet colormap to the current axes
 colorbar;
 axis image;
@@ -75,11 +97,14 @@ xlabel('Lateral'), ylabel('Axial'),
 grad_x = results_x(:,:,1);
 grad_z = results_z(:,:,1);
 phase_grad_2 = (grad_x.^2 + grad_z.^2)/constant;
-
 % ----- MedFilt  ----
-med_wind = floor (2.5/f_v/dinf.dx )*2+1; %the median window contains at least a wavelenght
+% med_wind = floor (2.5/f_v/dinf.dx )*2+1; %the median window contains at least a wavelenght
+% med_wind = floor (0.5/f_v/dinf.dx )*2+1;
+med_wind = 25;
 k2_med = medfilt2(phase_grad_2,[med_wind med_wind],'symmetric');
+
 k = sqrt(k2_med);
+% k = abs(medfilt2(grad_x/sqrt(constant),[med_wind med_wind],'symmetric'));
 % --------------------
 sws_matrix = (2*pi*f_v)./k;   
 
@@ -103,13 +128,13 @@ xlabel('Lateral'), ylabel('Axial'),
 
 
 %% Solving Inverse x problem
-A1 = Ax_large(:,1:167*167);
-A2 = Ax_large(:,167*167+1:end);
-mu1 = 10.^(-1);
-mu2 = 10.^(0);
 M = size_out(1);
 N = size_out(2);
-tol = 1e-2;
+A1 = Ax_large(:,1:M*N);
+A2 = Ax_large(:,M*N+1:end);
+mu1 = 10.^(0);
+mu2 = 10.^(0);
+tol = 1/M/N;
 mask = ones(size(bx_large));
 %
 tic
@@ -117,11 +142,12 @@ tic
 toc
 kxx = reshape(kxx,size_out);
 cx = reshape(cx,size_out);
-%%
+
+
 figure('Units','centimeters', 'Position',[5 5 20 10]),
 tl = tiledlayout(1,2);
 nexttile,
-imagesc(x*cm, z*cm, abs(kxx), [0 4000]);
+imagesc(x*cm, z*cm, (kxx), [-4000 4000]);
 colormap(gca, parula); % Apply jet colormap to the current axes
 colorbar;
 axis image;
@@ -136,8 +162,50 @@ axis image;
 title('c')
 xlabel('Lateral'), ylabel('Axial'),
 
+%% Solving Inverse z problem
+M = size_out(1);
+N = size_out(2);
+A1 = Az_large(:,1:M*N);
+A2 = Az_large(:,M*N+1:end);
+mask = ones(size(bz_large));
+%
+tic
+[kzz,cz] = AlterOpti_ADMM(A1,A2,bz_large,mu1,mu2,M,N,tol,mask);
+toc
+kzz = reshape(kzz,size_out);
+cz = reshape(cz,size_out);
+
+
+figure('Units','centimeters', 'Position',[5 5 20 10]),
+tl = tiledlayout(1,2);
+nexttile,
+imagesc(x*cm, z*cm, (kzz), [-4000 4000]);
+colormap(gca, parula); % Apply jet colormap to the current axes
+colorbar;
+axis image;
+title('k_z')
+xlabel('Lateral'), ylabel('Axial'),
+
+nexttile,
+imagesc(x*cm, z*cm, abs(cz));
+colormap(gca, parula); % Apply jet colormap to the current axes
+colorbar;
+axis image;
+title('c')
+xlabel('Lateral'), ylabel('Axial'),
+
 %%
-sws_x = (2*pi*f_v)./kxx;
+phase_grad_2 = (kxx.^2 + kzz.^2)/constant;
+% ----- MedFilt  ----
+% med_wind = floor (2.5/f_v/dinf.dx )*2+1; %the median window contains at least a wavelenght
+% med_wind = floor (0.5/f_v/dinf.dx )*2+1;
+med_wind = 15;
+k2_med = medfilt2(phase_grad_2,[med_wind med_wind],'symmetric');
+
+k = sqrt(k2_med);
+% --------------------
+sws_tv = (2*pi*f_v)./k;   
+
 figure('Units','centimeters', 'Position',[5 5 20 10]),
 tiledlayout(1,2)
 nexttile,
@@ -149,7 +217,7 @@ title('k_x')
 xlabel('Lateral'), ylabel('Axial'),
 
 nexttile,
-imagesc(x*cm, z*cm, sws_x, sws_range);
+imagesc(x*cm, z*cm, sws_tv);
 colormap(gca, turbo); % Apply jet colormap to the current axes
 colorbar;
 axis image;

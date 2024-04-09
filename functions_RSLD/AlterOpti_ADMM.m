@@ -29,7 +29,7 @@ error = 1;
 while abs(error) > tol && ite < 20
     ite = ite + 1;
     
-    rho = 1;
+    rho = 0.8;
     % First part of ADMM algorithm: B
     B = IRLS_TV(b-A2*C-D-v,A1,mu1/rho,m,n,tol,mask,minimask);
     
@@ -44,7 +44,7 @@ while abs(error) > tol && ite < 20
     % Fourth part of ADMM algorithm: v
     v = v + A1*B + A2*C + D - b;
     F(ite+1,1) = 1/2*(norm( b - A1*B - A2*C ))^2 + mu1*TVcalc_isotropic(B,m,n,minimask) + mu2*TVcalc_isotropic(C,m,n,minimask);
-    error = abs(F(ite+1) - F(ite));
+    error = (abs(F(ite+1) - F(ite))/F(ite));
 
 end
 figure,plot(F)

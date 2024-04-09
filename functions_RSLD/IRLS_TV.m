@@ -38,6 +38,7 @@ while error > tol && ite_irls < 200
     vksquare = Dh.^2 + Dv.^2;
     vksquare = vksquare(:);
     
+    % eps = 0.3;
     eps = 0.3;
     P = sqrt(vksquare + eps^2);
     P = 1./P;
@@ -51,11 +52,11 @@ while error > tol && ite_irls < 200
     
     [u,~] = minres(AtA + mu*D'*W*D, Atb, tol, 200);
     G(ite_irls+1,1) = 1/2*(norm( (b - A*u) ))^2 + mu*TVcalc_isotropic(u,M,N,minimask);
-    error = abs(G(ite_irls+1) - G(ite_irls));
-    %error = (G(ite_irls+1) - G(ite_irls)).^2/G(ite_irls).^2;
+    % error = abs(G(ite_irls+1) - G(ite_irls));
+    error = (G(ite_irls+1) - G(ite_irls))/G(ite_irls);
     
 end
-
+% figure,plot(G)
 %figure(909); plot(1:length(G),G);
 
 end
