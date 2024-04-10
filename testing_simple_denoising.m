@@ -1,3 +1,4 @@
+% testing modyfied system
 clear, clc
 load phasemap.mat
 
@@ -5,8 +6,9 @@ load phasemap.mat
 file_dir = ['C:\Users\sebas\Documents\MATLAB\DataProCiencia\' ...
     'Elastrography\reverberant\800.mat'];
 w_kernel = [15 15];
-constant = 0.33;
-stride = round(w_kernel)/5;
+constant = 0.3;
+stride = round(w_kernel)/3;
+%the median window contains at least a wavelenght
 
 % plotting const
 cm = 1e2;
@@ -19,6 +21,7 @@ dinf.dz = data.z(2) - data.z(1);
 f_v = data.freq;
 x = data.x; z = data.z;
 og_size = size(u);
+med_wind = floor (2.5/f_v/dinf.dx/stride(1))*2+1; 
 
 %% Observing data
 figure('Units','centimeters', 'Position',[5 5 20 10]),
@@ -80,7 +83,7 @@ xlabel('Lateral'), ylabel('Axial'),
 figure('Units','centimeters', 'Position',[5 5 20 10]),
 tiledlayout(1,2)
 nexttile,
-imagesc(x*cm, z*cm, (results_z(:,:,1)), [-4000 4000]);
+imagesc(x*cm, z*cm, (results_z(:,:,1)), [-2000 2000]);
 colormap(gca, parula); % Apply jet colormap to the current axes
 colorbar;
 axis image;
@@ -100,13 +103,8 @@ grad_x = results_x(:,:,1);
 grad_z = results_z(:,:,1);
 phase_grad_2 = (grad_x.^2 + grad_z.^2)/constant;
 % ----- MedFilt  ----
-% med_wind = floor (2.5/f_v/dinf.dx )*2+1; %the median window contains at least a wavelenght
-% med_wind = floor (0.5/f_v/dinf.dx )*2+1;
-med_wind = 1;
 k2_med = medfilt2(phase_grad_2,[med_wind med_wind],'symmetric');
-
 k = sqrt(k2_med);
-% k = abs(medfilt2(grad_x/sqrt(constant),[med_wind med_wind],'symmetric'));
 % --------------------
 sws_matrix = (2*pi*f_v)./k;   
 
@@ -128,98 +126,91 @@ axis image;
 title('SWS')
 xlabel('Lateral'), ylabel('Axial'),
 
-
-%% Solving Inverse x problem
+%% Denoiding gradient squared
 M = size_out(1);
 N = size_out(2);
-A1 = Ax_large(:,1:M*N);
-A2 = Ax_large(:,M*N+1:end);
-mu1 = 10.^(0);
-mu2 = 10.^(0);
-tol = 1/M/N;
+mu = 10.^(8); % mu=0.5
+tol = 1e-5;
 mask = ones(size(bx_large));
-%
+minimask = ones(M*N,1);
+
 tic
-[kxx,cx] = AlterOpti_ADMM(A1,A2,bx_large,mu1,mu2,M,N,tol,mask);
+denoised_grad = IRLS_TV(phase_grad_2(:),speye(M*N),mu,M,N,tol,mask,minimask);
+denoised_grad = reshape(denoised_grad, size_out);
 toc
-kxx = reshape(kxx,size_out);
-cx = reshape(cx,size_out);
-
-
-figure('Units','centimeters', 'Position',[5 5 20 10]),
-tl = tiledlayout(1,2);
-nexttile,
-imagesc(x*cm, z*cm, (kxx), [-4000 4000]);
-colormap(gca, parula); % Apply jet colormap to the current axes
-colorbar;
-axis image;
-title('k_x')
-xlabel('Lateral'), ylabel('Axial'),
-
-nexttile,
-imagesc(x*cm, z*cm, abs(cx));
-colormap(gca, parula); % Apply jet colormap to the current axes
-colorbar;
-axis image;
-title('c')
-xlabel('Lateral'), ylabel('Axial'),
-
-%% Solving Inverse z problem
-M = size_out(1);
-N = size_out(2);
-A1 = Az_large(:,1:M*N);
-A2 = Az_large(:,M*N+1:end);
-mask = ones(size(bz_large));
-%
-tic
-[kzz,cz] = AlterOpti_ADMM(A1,A2,bz_large,mu1,mu2,M,N,tol,mask);
-toc
-kzz = reshape(kzz,size_out);
-cz = reshape(cz,size_out);
-
-
-figure('Units','centimeters', 'Position',[5 5 20 10]),
-tl = tiledlayout(1,2);
-nexttile,
-imagesc(x*cm, z*cm, (kzz), [-4000 4000]);
-colormap(gca, parula); % Apply jet colormap to the current axes
-colorbar;
-axis image;
-title('k_z')
-xlabel('Lateral'), ylabel('Axial'),
-
-nexttile,
-imagesc(x*cm, z*cm, abs(cz));
-colormap(gca, parula); % Apply jet colormap to the current axes
-colorbar;
-axis image;
-title('c')
-xlabel('Lateral'), ylabel('Axial'),
-
-%%
-phase_grad_2 = (kxx.^2 + kzz.^2)/constant;
-% ----- MedFilt  ----
-% med_wind = floor (2.5/f_v/dinf.dx )*2+1; %the median window contains at least a wavelenght
-% med_wind = floor (0.5/f_v/dinf.dx )*2+1;
-med_wind = 15;
-k2_med = medfilt2(phase_grad_2,[med_wind med_wind],'symmetric');
-
-k = sqrt(k2_med);
+k = sqrt(denoised_grad);
+% k = denoised_grad;
 % --------------------
-sws_tv = (2*pi*f_v)./k;   
+sws_denoised = (2*pi*f_v)./k;   
+
+
 
 figure('Units','centimeters', 'Position',[5 5 20 10]),
 tiledlayout(1,2)
 nexttile,
-imagesc(x*cm, z*cm, real(u(:,:,1)));
-colormap(gca, parula); % Apply jet colormap to the current axes
+imagesc(x*cm, z*cm, sws_matrix, sws_range);
+colormap(gca, turbo); % Apply jet colormap to the current axes
 colorbar;
 axis image;
-title('k_x')
+title('SWS')
+xlabel('Lateral'), ylabel('Axial'),
+nexttile,
+imagesc(x*cm, z*cm, sws_denoised, sws_range);
+colormap(gca, turbo); % Apply jet colormap to the current axes
+colorbar;
+axis image;
+title('SWS')
 xlabel('Lateral'), ylabel('Axial'),
 
+
+%% Denoising gradient
+mu = 10.^(4.5); % mu=0.5
+tic
+denoised_grad = IRLS_TV(sqrt(phase_grad_2(:)),speye(M*N),mu,M,N,tol,mask,minimask);
+denoised_grad = reshape(denoised_grad, size_out);
+toc
+k = denoised_grad;
+% --------------------
+sws_denoised = (2*pi*f_v)./k;   
+
+
+
+figure('Units','centimeters', 'Position',[5 5 20 10]),
+tiledlayout(1,2)
 nexttile,
-imagesc(x*cm, z*cm, sws_tv);
+imagesc(x*cm, z*cm, sws_matrix, sws_range);
+colormap(gca, turbo); % Apply jet colormap to the current axes
+colorbar;
+axis image;
+title('SWS')
+xlabel('Lateral'), ylabel('Axial'),
+nexttile,
+imagesc(x*cm, z*cm, sws_denoised, sws_range);
+colormap(gca, turbo); % Apply jet colormap to the current axes
+colorbar;
+axis image;
+title('SWS')
+xlabel('Lateral'), ylabel('Axial'),
+
+%% Denoising sws
+sws_noisy = (2*pi*f_v)./sqrt(phase_grad_2);   
+mu = 10.^(1); % mu=0.5
+tic
+sws_denoised = IRLS_TV(sws_noisy(:),speye(M*N),mu,M,N,tol,mask,minimask);
+sws_denoised = reshape(sws_denoised, size_out);
+toc
+
+figure('Units','centimeters', 'Position',[5 5 20 10]),
+tiledlayout(1,2)
+nexttile,
+imagesc(x*cm, z*cm, sws_matrix, sws_range);
+colormap(gca, turbo); % Apply jet colormap to the current axes
+colorbar;
+axis image;
+title('SWS')
+xlabel('Lateral'), ylabel('Axial'),
+nexttile,
+imagesc(x*cm, z*cm, sws_denoised, sws_range);
 colormap(gca, turbo); % Apply jet colormap to the current axes
 colorbar;
 axis image;
