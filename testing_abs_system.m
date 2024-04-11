@@ -4,7 +4,7 @@ load phasemap.mat
 
 % file_dir = 'P:\rswe\dataold\Data800Hz-10000ondas\R-FIELD_inc_1.mat';
 file_dir = ['C:\Users\sebas\Documents\MATLAB\DataProCiencia\' ...
-    'Elastrography\reverberant\800.mat'];
+    'Elastrography\reverberant\arom\800.mat'];
 w_kernel = [15 15];
 constant = 0.3;
 stride = round(w_kernel)/3;

@@ -3,7 +3,7 @@ load phasemap.mat
 
 % file_dir = 'P:\rswe\dataold\Data800Hz-10000ondas\R-FIELD_inc_1.mat';
 file_dir = ['C:\Users\sebas\Documents\MATLAB\DataProCiencia\' ...
-    'Elastrography\reverberant\800.mat'];
+    'Elastrography\reverberant\arom\800.mat'];
 w_kernel = [15 15];
 constant = 0.33;
 stride = round(w_kernel)/5;
@@ -88,7 +88,7 @@ load phasemap.mat
 
 % file_dir = 'P:\rswe\dataold\Data800Hz-10000ondas\R-FIELD_inc_1.mat';
 file_dir = ['C:\Users\sebas\Documents\MATLAB\DataProCiencia\' ...
-    'Elastrography\reverberant\800.mat'];
+    'Elastrography\reverberant\arom\800.mat'];
 w_kernel = [5 5];
 constant = 0.3;
 stride = round(w_kernel/5);
@@ -125,7 +125,6 @@ colorbar;
 axis image;
 title('Phase')
 xlabel('Lateral'), ylabel('Axial'),
-
 
 %% Getting system
 extended_u = padarray(u,[(w_kernel(1)-1)/2 (w_kernel(2)-1)/2],'symmetric');
@@ -190,7 +189,7 @@ phase_grad_2 = (grad_x.^2 + grad_z.^2)/constant;
 % k2_med = medfilt2(phase_grad_2,[med_wind med_wind],'symmetric');
 % h = fspecial('average', [60 60]);
 % k2_med = filter2(h,phase_grad_2);
-k2_med = imgaussfilt(phase_grad_2,20);
+k2_med = imgaussfilt(phase_grad_2,1);
 k = sqrt(k2_med);
 % --------------------
 sws_matrix = (2*pi*f_v)./k;   

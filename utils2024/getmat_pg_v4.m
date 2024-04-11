@@ -89,7 +89,8 @@ function [Ax_large, Az_large, bx_large, bz_large, size_out] = getmat_pg_v4(u, w_
 
             bz_small = sign(kz)*(bz_small - phi0_z);
             bx_small = sign(kx)*(bx_small - phi0_x);
-
+            % bz_small = (bz_small - phi0_z);
+            % bx_small = (bx_small - phi0_x);
             %%%% EDIT EMZ SUBSTRACT PHI0 %%%%
 
             %%%%%%%%%%%% BETTER EFFICIENCY v2.0 %%%%%%%%%%%%
