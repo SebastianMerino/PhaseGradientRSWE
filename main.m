@@ -1,9 +1,10 @@
 % SCRIP TO GENERATE SWS MAPS OF HOMOGENEOUS REVERBERANT FIELDS
 % Creation: 26/03/2024 (EMZ)
 setup,
-baseDir = ['C:\Users\sebas\Documents\MATLAB\DataProCiencia\Elastrography' ...
-    '\reverberant\new'];
-dataDir = fullfile(baseDir,'sim');
+% baseDir = ['C:\Users\sebas\Documents\MATLAB\DataProCiencia\Elastrography' ...
+%     '\reverberant\new'];
+baseDir = 'P:\smerino\reverberant\simu_inc';
+dataDir = fullfile(baseDir,'raw');
 resultsDir = fullfile(baseDir,'results');
 [~,~,~]= mkdir(dataDir);
 [~,~,~]= mkdir(resultsDir);
@@ -77,7 +78,7 @@ for iSim = 1:length(files)
     grad_x = results_x(:,:,1);
     grad_z = results_z(:,:,1);
     phase_grad_2 = (grad_x.^2 + grad_z.^2)/constant;
-    med_wind = 1;
+    % med_wind = 1;
     k2_med = medfilt2(phase_grad_2,[med_wind med_wind],'symmetric');
     k = sqrt(k2_med);
     sws_direct = (2*pi*f_v)./k;   

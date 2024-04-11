@@ -1,9 +1,10 @@
 % SCRIP TO GENERATE SWS MAPS OF HOMOGENEOUS REVERBERANT FIELDS
 % Creation: 26/03/2024 (EMZ)
 setup,
-baseDir = ['C:\Users\sebas\Documents\MATLAB\DataProCiencia\Elastrography' ...
-    '\reverberant\new_homo'];
-dataDir = fullfile(baseDir,'sim');
+% baseDir = ['C:\Users\sebas\Documents\MATLAB\DataProCiencia\Elastrography' ...
+%     '\reverberant\new_homo'];
+baseDir = 'P:\smerino\reverberant\simu_homo';
+dataDir = fullfile(baseDir,'raw');
 resultsDir = fullfile(baseDir,'results');
 [~,~,~]= mkdir(dataDir);
 [~,~,~]= mkdir(resultsDir);
@@ -31,7 +32,7 @@ end
 
 %% Setting parameters
 % Kernel size and step
-w_kernel = [3 3];
+w_kernel = [15 15];
 constant = 1; % 0.28 is measured
 stride = round(w_kernel/5);
 
