@@ -96,15 +96,15 @@ ylim([0 1e-3])
 
 % end
 %% Post-processing
-% med_wind = floor (2.5/f_v/dinf.dx/stride(1))*2+1;
-med_wind = 1;
+med_wind = floor (2.5/f_v/dinf.dx/stride(1))*2+1;
+% med_wind = 1;
 k2_med = medfilt2(phase_grad_2,[med_wind med_wind],'symmetric');
 k = sqrt(k2_med);
 sws_direct = (2*pi*f_v)./k;   
 
 % Plotting
 figure('Units','centimeters', 'Position',[5 5 30 10]),
-tiledlayout(1,2)
+tiledlayout(1,3)
 nexttile,
 imagesc(x*cm, z*cm, real(u(:,:,1)));
 colormap(gca, parula);
@@ -112,11 +112,19 @@ axis image;
 title('PV')
 xlabel('Lateral [cm]'), ylabel('Axial [cm]'),
 nexttile,
+imagesc(x*cm, z*cm, sqrt(phase_grad_2), [0 5000]);
+colormap(gca, turbo);
+colorbar
+axis image;
+title('SWS PG')
+xlabel('Lateral [cm]')
+nexttile,
 imagesc(xSWS*cm, zSWS*cm, sws_direct, sws_range);
 colormap(gca, turbo);
 axis image;
 title('SWS PG')
 xlabel('Lateral [cm]')
+
 %%
 c_est = mean(sws_direct(:));
 disp('SWS')
