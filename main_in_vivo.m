@@ -1,7 +1,8 @@
-% SCRIP TO GENERATE SWS MAPS OF IN VIVO DATA
-% Creation: 26/03/2024 (EMZ)
+% SCRIP TO test in vivio data
 setup,
-baseDir = 'P:\rswe\DATA_2_PUCP';
+% baseDir = 'P:\rswe\DATA_2_PUCP';
+baseDir = ['C:\Users\sebas\Documents\MATLAB\DataProCiencia\' ...
+    'Elastrography\reverberant\in_vivo'];
 dataDir = baseDir;
 matrixDir = fullfile(baseDir,'matrices');
 figDir = fullfile(baseDir,'figures');
@@ -78,11 +79,21 @@ for iAcq = 1:length(files)
     axis image;
     title('SWS PG')
     xlabel('Lateral [cm]')
+
+    %%
+            cMin = 1; opts.cMax = 5; 
+        opts.typeFilter = 'bpf';
+        uFilt = preproc_partDisplacement(structdata.u,freq,cMin,dinf,opts);
+ 
+        frame = uFilt;
+        og_size = size(frame);
+        mirror_frame = padarray(frame,[(window-1)/2 (window-1)/2],'symmetric');
+       
+        [grad_abs, size_out] = pg_norm(mirror_frame, w_kernel, dinf, og_size, stride);
+
 %%
     save_all_figures_to_directory(figDir,[files(iAcq).name(1:end-4),'fig']);
     close all,
-    save(fullfile(matrixDir,files(iAcq).name),...
-        'Ax_large','Az_large','bx_large','bz_large','size_out');
 end
 %%
 %     nexttile,
