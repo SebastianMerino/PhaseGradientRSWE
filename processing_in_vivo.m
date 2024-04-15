@@ -19,12 +19,12 @@ for ii = 1: length(v_freq)
    
     freq = v_freq(ii);
     sampleCase = list_data(ii);
-    pathfreq_in = '';
-    pathfreq_out = [pathout, num2str(freq),'Hz/'];
+    pathfreq_in = pathdata;
+    pathfreq_out = fullfile(pathout,[num2str(freq),'Hz']);
 
     if ~exist(pathfreq_out,"dir"); mkdir(pathfreq_out); end
         name = ['data',num2str(sampleCase),'.mat'];
-        structdata = load([pathfreq_in, name]);
+        structdata = load(fullfile(pathfreq_in, name));
 
         dinf.dx = structdata.dinf.dx;
         dinf.dz = structdata.dinf.dx;
@@ -41,10 +41,11 @@ for ii = 1: length(v_freq)
         [grad_abs, size_out] = pg_norm(mirror_frame, w_kernel, dinf, og_size, stride);
 
         % Save
-        pathMat = [pathfreq_out, 'MatrixW',num2str(w_kernel(1)),'/'];
+        pathMat = fullfile(pathfreq_out, 'MatrixW',num2str(w_kernel(1)));
         if ~exist(pathMat,"dir"); mkdir(pathMat); end
-        save([pathMat, 'PG_abs_str',num2str(stride),'data', num2str(sampleCase), '.mat'],'grad_abs','size_out', ...
-                'window', 'stride', 'freq');
+        save(fullfile(pathMat, ...
+            ['PG_abs_str',num2str(stride),'data', num2str(sampleCase), '.mat']) ...
+            ,'grad_abs','size_out', 'window', 'stride', 'freq');
 end
 toc
 fprintf('---------------------------\n')

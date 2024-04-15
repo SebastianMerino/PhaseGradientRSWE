@@ -47,6 +47,9 @@ function [grad_z,grad_x,k,sws_map] = phase_estimator_QR_kernel(u, w_kernel,f_v,d
 
     %% HELP FOR DIMENSIONS %% % THEORY
     size_mirror = size(u); % ogsize + w_kernel - 1; %  = size (u)
+    disp(size_mirror)
+    disp(w_kernel)
+    disp(st)
     numkernels = floor( (size_mirror - w_kernel)./st + 1 ); % numKernels
     overlap_ax1 = 1 - st/w_kernel(1);
     overlap_la1 = 1 - st/w_kernel(2);

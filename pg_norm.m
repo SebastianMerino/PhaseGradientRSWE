@@ -85,6 +85,8 @@ function [grad_abs, size_out] = pg_norm(u, w_kernel, dinf, og_size, stride)
         
             val_abs = sqrt(diff_area_z.^2 + diff_area_x.^2);
             grad_abs(ii,jj) = mean(val_abs, 'all');
+%             val_abs = (diff_area_z.^2 + diff_area_x.^2);
+%             grad_abs(ii,jj) = sqrt(mean(val_abs, 'all'));
 
         end
     end
