@@ -31,7 +31,11 @@ function [uFilt] = preproc_partDisplacement(u,fv,cMin,dinf,opts)
             peak_Complex(i,j) = peak_magnitude(i,j) * exp(1i * peak_phase(i,j));
         end
     end
-        
+    % fs = dinf.PRFe;
+    % t = (0:size(u,3)-1)/fs;
+    % t = reshape(t,[1,1,length(t)]);
+    % peak_Complex = sum(u.*exp(-1j*2*pi*fv*t),3);
+
     % 2D filtering
     kmax = 2*pi*fv/cMin;
     if strcmp(opts.typeFilter, 'lpf')

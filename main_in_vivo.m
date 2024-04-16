@@ -1,8 +1,8 @@
 % SCRIP TO test in vivio data
 setup,
-baseDir = 'P:\rswe\DATA_2_PUCP';
-% baseDir = ['C:\Users\sebas\Documents\MATLAB\DataProCiencia\' ...
-%     'Elastrography\reverberant\in_vivo'];
+% baseDir = 'P:\rswe\DATA_2_PUCP';
+baseDir = ['C:\Users\sebas\Documents\MATLAB\DataProCiencia\' ...
+    'Elastrography\reverberant\in_vivo'];
 dataDir = baseDir;
 resultsDir = 'P:\rswe\DATA_2_PUCP\smerino\best_v2';
 [~,~,~] = mkdir(resultsDir);
