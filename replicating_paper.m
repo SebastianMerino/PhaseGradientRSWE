@@ -37,58 +37,58 @@ Bmode = Bmode - max(Bmode(:));
 xBm = (0:size(Bmode,2)-1)*dinf.dx - dinf.offset_x;
 zBm = (0:size(Bmode,1)-1)*dinf.dz;
    
-%% Taking peak
-uFrame = zeros(size(u, [1 2]));
-mask = zeros(size(uFrame));
-for ii = 1:size(u,1)
-    for jj = 1:size(u,2)
-        signal = squeeze(u(ii,jj,:));
-        U = fft(signal);
-        [~,iMax] = max(abs(U));
-        uFrame(ii,jj) = U(iMax);
-        % mask(ii,jj) = snr(signal)>=10; 
-    end
-end
-
-figure('Units','centimeters', 'Position',[5 5 20 10]), 
-tiledlayout(1,2, 'TileSpacing','compact', 'Padding','compact')
-t1 = nexttile;
-imagesc(xBm*cm,zBm*cm, real(uFrame), std(uFrame(:))*[-1 1])
-colormap(t1,"parula")
-axis image
-title('PV')
-
-t1 = nexttile;
-imagesc(x*cm,z*cm, mask, [0 1])
-colormap(t1,"parula")
-axis image
-title('SNR mask')
-
-%% 2D bandpass filter
-cMin = 0.3; cMax = 5.1; 
-kMin = 2*pi*f_v/cMax; kMax = 2*pi*f_v/cMin;
-uFilt = filt2D_bpf(uFrame, dinf.dx, dinf.dz, kMin, kMax);
-
-load phasemap.mat
-cm = 1e2;
-figure('Units','centimeters', 'Position',[5 5 20 10]), 
-tiledlayout(1,3, 'TileSpacing','compact', 'Padding','compact')
-t1 = nexttile;
-imagesc(xBm*cm,zBm*cm, Bmode, [-50 0])
-colormap(t1,"gray")
-axis image
-title('Bmode')
-
-t1 = nexttile;
-imagesc(x*cm,z*cm, real(uFilt), std(uFilt(:))*[-1 1])
-colormap(t1,"parula")
-axis image
-title('PV')
-t2 = nexttile;
-imagesc(x*cm,z*cm, (angle(uFilt)))
-colormap(t2,phasemap)
-axis image
-title('Phase')
+% %% Taking peak
+% uFrame = zeros(size(u, [1 2]));
+% mask = zeros(size(uFrame));
+% for ii = 1:size(u,1)
+%     for jj = 1:size(u,2)
+%         signal = squeeze(u(ii,jj,:));
+%         U = fft(signal);
+%         [~,iMax] = max(abs(U));
+%         uFrame(ii,jj) = U(iMax);
+%         % mask(ii,jj) = snr(signal)>=10; 
+%     end
+% end
+% 
+% figure('Units','centimeters', 'Position',[5 5 20 10]), 
+% tiledlayout(1,2, 'TileSpacing','compact', 'Padding','compact')
+% t1 = nexttile;
+% imagesc(xBm*cm,zBm*cm, real(uFrame), std(uFrame(:))*[-1 1])
+% colormap(t1,"parula")
+% axis image
+% title('PV')
+% 
+% t1 = nexttile;
+% imagesc(x*cm,z*cm, mask, [0 1])
+% colormap(t1,"parula")
+% axis image
+% title('SNR mask')
+% 
+% %% 2D bandpass filter
+% cMin = 0.3; cMax = 5.1; 
+% kMin = 2*pi*f_v/cMax; kMax = 2*pi*f_v/cMin;
+% uFilt = filt2D_bpf(uFrame, dinf.dx, dinf.dz, kMin, kMax);
+% 
+% load phasemap.mat
+% cm = 1e2;
+% figure('Units','centimeters', 'Position',[5 5 20 10]), 
+% tiledlayout(1,3, 'TileSpacing','compact', 'Padding','compact')
+% t1 = nexttile;
+% imagesc(xBm*cm,zBm*cm, Bmode, [-50 0])
+% colormap(t1,"gray")
+% axis image
+% title('Bmode')
+% 
+% t1 = nexttile;
+% imagesc(x*cm,z*cm, real(uFilt), std(uFilt(:))*[-1 1])
+% colormap(t1,"parula")
+% axis image
+% title('PV')
+% t2 = nexttile;
+% imagesc(x*cm,z*cm, (angle(uFilt)))
+% colormap(t2,phasemap)
+% axis image
+% title('Phase')
 
 %% Other function
 [uFiltv2] = fun_JO_v1(u, f_v, dinf);
@@ -205,13 +205,13 @@ sws_lsq = (2*pi*f_v)./k;
 
 %% PG-TV
 constant_tv = 0.7;
-kernel_tv = [21 21];
+kernel_tv = [15 15]; stride = 1;
 extended_u = padarray(uFiltv2,(kernel_tv-1)/2,'symmetric');
 
 [grad_abs, size_out] = pg_norm(extended_u, kernel_tv, dinf, og_size, stride);
 grad_abs = grad_abs/sqrt(constant_tv);
 M = size_out(1); N = size_out(2);
-mu = 10.^3; 
+mu = 10.^4; 
 
 tol = 1e-5;
 mask = ones(size(M*N));

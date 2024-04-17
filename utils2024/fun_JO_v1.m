@@ -41,8 +41,8 @@ function [M_filtered] = fun_JO_v1(u, freq, dinf)
     sigma = 50; % CHANGE 300;
     %  Breast data
     cs_min = 0.045*(2*pi*freq).^0.25;
-    cs_max = 0.33*(2*pi*freq).^0.35;
-    
+    cs_max = 0.33*(2*pi*freq).^0.35 /2; % I CHANGED THIS TO MAKE IT WORK
+    % cs_max = 4.5;
     Fs1 = 1/dinf.dz;  % Sampling spatial frequency
     Fs2 = 1/dinf.dx;
     
