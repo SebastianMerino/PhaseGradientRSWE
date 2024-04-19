@@ -834,7 +834,6 @@ end
 % 
 % end
 %% MEDIAN FILTER
-
 for ii = 1 : numChannels
     freq = v_freq_best(ii); 
     med_wind = [my_obj.window];
@@ -843,7 +842,7 @@ for ii = 1 : numChannels
 
 end
 
-%% PLOT MED FILT 
+% PLOT MED FILT 
 caxis_sws = [1 4];
 figure, % SWS
 sgtitle('SWS Median filter')
@@ -1040,24 +1039,24 @@ gtBack = 3.65;
 x0 = cx - L/2; z0 = cz-L/2;
 xb1 = x0 - d - L/2;
 xb2 = x0 + L + d;
-figure('Position',[100 100 900 400]), % SWS
-tiledlayout(2,numChannels+1, 'TileSpacing','loose', 'Padding','compact')
+figure('Position',[100 100 500 450]), % SWS
+tiledlayout(3,numChannels, 'TileSpacing','tight', 'Padding','compact')
 % sgtitle('SWS TNV')
 % set(gcf, 'units', 'Normalized', 'Position', [0 0.1 0.75 0.35])
 
-t1 = nexttile([2,1]);
-imagesc(xBm*mm,zBm*mm, Bmode, [-50 0])
-axis image
-% c =colorbar(t1,'westoutside');
-% colorbar
-rectangle('Position',[x0, z0,L,L], 'LineStyle','--')
-rectangle('Position',[xb1, z0,L/2,L], 'LineStyle','--')
-rectangle('Position',[xb2, z0,L/2,L], 'LineStyle','--')
-title('Bmode')
-xlabel('Lateral [mm]'), ylabel('Axial [mm]'),
-ylim(zlim_mm)
-xlim([x(1) x(end)]*mm)
-set(gca, 'FontSize',fontSize)
+% t1 = nexttile([3,1]);
+% imagesc(xBm*mm,zBm*mm, Bmode, [-50 0])
+% axis image
+% % c =colorbar(t1,'westoutside');
+% % colorbar
+% rectangle('Position',[x0, z0,L,L], 'LineStyle','--')
+% rectangle('Position',[xb1, z0,L/2,L], 'LineStyle','--')
+% rectangle('Position',[xb2, z0,L/2,L], 'LineStyle','--')
+% title('Bmode')
+% xlabel('Lateral [mm]'), ylabel('Axial [mm]'),
+% ylim(zlim_mm)
+% xlim([x(1) x(end)]*mm)
+% set(gca, 'FontSize',fontSize)
 
 for ii = 1 : numChannels
     freq = v_freq_best(ii);
@@ -1071,24 +1070,62 @@ for ii = 1 : numChannels
     rectangle('Position',[xb2, z0,L/2,L], 'LineStyle','--')
 
     colormap ("turbo");
-    title (['PG-MF, f = ', num2str(freq),'Hz'])
+    title (['f = ', num2str(freq),'Hz'])
     ylim(zlim_mm)
-    if ii==1; ylabel('Axial [mm]'); end
+    % if ii==1; ylabel('Axial [mm]'); end
     text(0,10,['CNR = ',num2str(T.cnr(ii),2)], ...
         'HorizontalAlignment', 'center')
-    biasInc = (T.mean_inc(ii) - gtInc)/gtInc*100;
-    biasBack = (T.mean_back(ii) - gtBack)/gtBack*100;
+    biasInc = abs(T.mean_inc(ii) - gtInc)/gtInc*100;
+    biasBack = abs(T.mean_back(ii) - gtBack)/gtBack*100;
     text(0,31,['Bias_{inc} = ',num2str(biasInc,2),'%'], ...
         'HorizontalAlignment', 'center')
     text(0,35,['Bias_{back} = ',num2str(biasBack,2),'%'], ...
         'HorizontalAlignment', 'center')
-
+    if ii==1
+        text(-22,22.5,'\bf PG', ...
+            'HorizontalAlignment', 'center', 'Rotation',90);
+    end
+    axis off
     set(gca, 'FontSize',fontSize)
 
 end
 c = colorbar;
 c.Label.String = 'SWS [m/s]';
 
+
+for ii = 1 : numChannels
+    freq = v_freq_best(ii);
+%     subplot (2, 3, ii)
+    % subplot (1, numChannels+1, ii+1) % abstract IUS203
+    nexttile;
+    imagesc(x*mm,z*mm,tv.sws_abs_3D(:,:,ii), caxis_sws), axis('tight')
+    axis image
+    rectangle('Position',[x0, z0,L,L], 'LineStyle','--')
+    rectangle('Position',[xb1, z0,L/2,L], 'LineStyle','--')
+    rectangle('Position',[xb2, z0,L/2,L], 'LineStyle','--')
+
+    colormap ("turbo");
+    % title (['PG-TV, f = ', num2str(freq),'Hz'])
+    ylim(zlim_mm)
+    % if ii==1; ylabel('Axial [mm]'); end
+    text(0,10,['CNR = ',num2str(T.cnr(ii+3),2)], ...
+        'HorizontalAlignment', 'center')
+    biasInc = abs(T.mean_inc(ii+3) - gtInc)/gtInc*100;
+    biasBack = abs(T.mean_back(ii+3) - gtBack)/gtBack*100;
+    text(0,31,['Bias_{inc} = ',num2str(biasInc,2),'%'], ...
+        'HorizontalAlignment', 'center')
+    text(0,35,['Bias_{back} = ',num2str(biasBack,2),'%'], ...
+        'HorizontalAlignment', 'center')
+    if ii==1
+        text(-22,22.5,'\bf PG-TV', ...
+            'HorizontalAlignment', 'center', 'Rotation',90);
+    end
+    axis off
+    set(gca, 'FontSize',fontSize)
+
+end
+c = colorbar;
+c.Label.String = 'SWS [m/s]';
 %nexttile;
 %axis off
 
@@ -1105,24 +1142,29 @@ for ii = 1 : numChannels
 
     colormap ("turbo");
     xlabel('Lateral [mm]'),
-    if ii==1; ylabel('Axial [mm]'); end
-    title (['PG-TNV, f = ', num2str(freq),'Hz'])
+    % if ii==1; ylabel('Axial [mm]'); end
+    % title (['PG-TNV, f = ', num2str(freq),'Hz'])
     ylim(zlim_mm)
     text(0,10,['CNR = ',num2str(T.cnr(ii+6),2)], ...
         'HorizontalAlignment', 'center')
     
-    biasInc = (T.mean_inc(ii+6) - gtInc)/gtInc*100;
-    biasBack = (T.mean_back(ii+6) - gtBack)/gtBack*100;
+    biasInc = abs(T.mean_inc(ii+6) - gtInc)/gtInc*100;
+    biasBack = abs(T.mean_back(ii+6) - gtBack)/gtBack*100;
     text(0,31,['Bias_{inc} = ',num2str(biasInc,2),'%'], ...
         'HorizontalAlignment', 'center')
     text(0,35,['Bias_{back} = ',num2str(biasBack,2),'%'], ...
         'HorizontalAlignment', 'center')
+    if ii==1
+        text(-22,22.5,'\bf PG-TNV', ...
+            'HorizontalAlignment', 'center', 'Rotation',90);
+    end
 
+    axis off
     set(gca, 'FontSize',fontSize)
 end
 c = colorbar;
 c.Label.String = 'SWS [m/s]';
-colormap(t1,gray)
+% colormap(t1,gray)
 
 %% =====================================================================
 %% TOTAL NUCLEAR VARIATION grid search
