@@ -14,7 +14,8 @@ w_kernel = [window, window];
 phaseExtrac = 'JO';
 tic;
 
-pathdata = 'C:\Users\sebas\Documents\MATLAB\DataProCiencia\Elastrography\reverberant\CIRS_phantom\L7-4';
+% pathdata = 'C:\Users\sebas\Documents\MATLAB\DataProCiencia\Elastrography\reverberant\CIRS_phantom\L7-4';
+pathdata = 'C:\Users\smerino.C084288\Documents\MATLAB\Datasets\RSWE-PG\Data_3_PUCP\CIRS_phantom\L7-4';
 pathout = fullfile(pathdata,'AromCode');
 
 if ~exist("pathout","dir"); mkdir(pathout); end
@@ -575,97 +576,97 @@ title('CNR')
 xlabel('Frequency [Hz]')
 
 %% =====================================================================
-%% TOTAL NUCLEAR VARIATION grid search
-M = my_obj.size_out(1);
-N = my_obj.size_out(2);
-
-% tau_vector = [0.001];
-% mu_vector = logspace(log10(0.1),log10(10^5),10); % logarithmic
-mu_vector = 10.^(3:0.5:4);
-tau_vector = 10.^(-3.5:0.5:-2.5);
-maxIter = 1000;
-stableIter = 50;
-tol = 10e-4; % tolerance error
-
-weightEstimators = ones(1, length(v_freq));
-
-
-% van quedando mu = 10^3 10^3.67
-
-% mu_vector = 10^3.5;
-% tau_vector = [0.1 0.05 0.01 0.005 0.001 0.0005 0.0001];
-
-
-list_data = [10 11 13];
-v_freq = [400 600 900];
-
-v_freq_best = v_freq;
-list_data_best = list_data;
-numChannels = length(v_freq_best);
-
-for u = 1:length(mu_vector)
-    bestmu = mu_vector(u);
-    for t = 1:length(tau_vector)
-        besttau = tau_vector(t);
-
-        clear tnv
-        [tnv.grad_abs_3D, cost, error, fid, reg] = pdo_den_wtnv(og.grad_abs_3D, bestmu, besttau, maxIter, tol, stableIter, weightEstimators); 
-
+% %% TOTAL NUCLEAR VARIATION grid search
+% M = my_obj.size_out(1);
+% N = my_obj.size_out(2);
+% 
+% % tau_vector = [0.001];
+% % mu_vector = logspace(log10(0.1),log10(10^5),10); % logarithmic
+% mu_vector = 10.^(3:0.5:4);
+% tau_vector = 10.^(-3.5:0.5:-2.5);
+% maxIter = 1000;
+% stableIter = 50;
+% tol = 10e-4; % tolerance error
+% 
+% weightEstimators = ones(1, length(v_freq));
+% 
+% 
+% % van quedando mu = 10^3 10^3.67
+% 
+% % mu_vector = 10^3.5;
+% % tau_vector = [0.1 0.05 0.01 0.005 0.001 0.0005 0.0001];
+% 
+% 
+% list_data = [10 11 13];
+% v_freq = [400 600 900];
+% 
+% v_freq_best = v_freq;
+% list_data_best = list_data;
+% numChannels = length(v_freq_best);
+% 
+% for u = 1:length(mu_vector)
+%     bestmu = mu_vector(u);
+%     for t = 1:length(tau_vector)
+%         besttau = tau_vector(t);
+% 
+%         clear tnv
+%         [tnv.grad_abs_3D, cost, error, fid, reg] = pdo_den_wtnv(og.grad_abs_3D, bestmu, besttau, maxIter, tol, stableIter, weightEstimators); 
+% 
+% %         for ii = 1 : numChannels
+% %         
+% %             freq = v_freq_best(ii);
+% %         
+% %             tnv.sws_abs_3D(:,:, ii) = (2*pi*freq)./tnv.grad_abs_3D(:,:,ii);
+% %         
+% %         end
+% 
+%         tnv.sws_abs_3D =  2*pi* reshape(v_freq_best, [1, 1, numChannels]) ./ tnv.grad_abs_3D; % more elegant
+% 
+%         caxis_sws = [1 4];
+%         figure, % SWS
+%         sgtitle(['SWS TNV, \mu=10^{', num2str(log10(bestmu)), '} \tau=10^{', num2str(log10(besttau)),'}']);
+%         set(gcf, 'units', 'Normalized', 'Position', [0 0 0.55 0.55])
 %         for ii = 1 : numChannels
-%         
 %             freq = v_freq_best(ii);
-%         
-%             tnv.sws_abs_3D(:,:, ii) = (2*pi*freq)./tnv.grad_abs_3D(:,:,ii);
+%             subplot (2, 3, ii)
+%             imagesc(tnv.sws_abs_3D(:,:,ii), caxis_sws), axis('tight')
+% %             colormap ("jet");
+%             colormap ("turbo");
+%             xlabel('Lateral [cm]'), ylabel('Axial[cm]'), colorbar
+%             title (['SWS f_v = ', num2str(freq) ])
 %         
 %         end
-
-        tnv.sws_abs_3D =  2*pi* reshape(v_freq_best, [1, 1, numChannels]) ./ tnv.grad_abs_3D; % more elegant
-
-        caxis_sws = [1 4];
-        figure, % SWS
-        sgtitle(['SWS TNV, \mu=10^{', num2str(log10(bestmu)), '} \tau=10^{', num2str(log10(besttau)),'}']);
-        set(gcf, 'units', 'Normalized', 'Position', [0 0 0.55 0.55])
-        for ii = 1 : numChannels
-            freq = v_freq_best(ii);
-            subplot (2, 3, ii)
-            imagesc(tnv.sws_abs_3D(:,:,ii), caxis_sws), axis('tight')
-%             colormap ("jet");
-            colormap ("turbo");
-            xlabel('Lateral [cm]'), ylabel('Axial[cm]'), colorbar
-            title (['SWS f_v = ', num2str(freq) ])
-        
-        end
-
-    end
-end
-
-
-
-%% PLOT TNV grid search
-
-caxis_sws = [0 5];
-figure, % SWS
-sgtitle('SWS TNV')
-set(gcf, 'units', 'Normalized', 'Position', [0 0 0.55 0.55])
-for ii = 1 : numChannels
-    freq = v_freq_best(ii);
-    subplot (2, 3, ii)
-    imagesc(tnv.sws_abs_3D(:,:,ii), caxis_sws), axis('tight')
-    colormap ("jet");
+% 
+%     end
+% end
+% 
+% 
+% 
+% %% PLOT TNV grid search
+% 
+% caxis_sws = [0 5];
+% figure, % SWS
+% sgtitle('SWS TNV')
+% set(gcf, 'units', 'Normalized', 'Position', [0 0 0.55 0.55])
+% for ii = 1 : numChannels
+%     freq = v_freq_best(ii);
+%     subplot (2, 3, ii)
+%     imagesc(tnv.sws_abs_3D(:,:,ii), caxis_sws), axis('tight')
+%     colormap ("jet");
+% %     colormap ("turbo");
+%     xlabel('Lateral [cm]'), ylabel('Axial[cm]'), colorbar
+%     title (['SWS f_v = ', num2str(freq) ])
+% 
+% end
+% 
+% figure, % grad phi
+% sgtitle('|\nabla\phi| TNV')
+% for ii = 1 : numChannels
+%     freq = v_freq_best(ii);
+%     subplot (2, 3, ii)
+%     imagesc(tnv.grad_abs_3D(:,:,ii))
 %     colormap ("turbo");
-    xlabel('Lateral [cm]'), ylabel('Axial[cm]'), colorbar
-    title (['SWS f_v = ', num2str(freq) ])
-
-end
-
-figure, % grad phi
-sgtitle('|\nabla\phi| TNV')
-for ii = 1 : numChannels
-    freq = v_freq_best(ii);
-    subplot (2, 3, ii)
-    imagesc(tnv.grad_abs_3D(:,:,ii))
-    colormap ("turbo");
-    xlabel('Lateral [cm]'), ylabel('Axial[cm]'), colorbar
-    title (['\nabla\phi f_v = ', num2str(freq) ])
-
-end
+%     xlabel('Lateral [cm]'), ylabel('Axial[cm]'), colorbar
+%     title (['\nabla\phi f_v = ', num2str(freq) ])
+% 
+% end
