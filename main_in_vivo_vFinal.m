@@ -14,7 +14,8 @@ constant = 1; % 1.16 gives good results
 phaseExtrac = 'JO';
 tic;
 
-pathdata = 'C:\Users\sebas\Documents\MATLAB\DataProCiencia\Elastrography\reverberant\CIRS_phantom\L7-4';
+% pathdata = 'C:\Users\sebas\Documents\MATLAB\DataProCiencia\Elastrography\reverberant\CIRS_phantom\L7-4';
+pathdata = 'C:\Users\smerino.C084288\Documents\MATLAB\Datasets\RSWE-PG\Data_3_PUCP\CIRS_phantom\L7-4';
 pathout = fullfile(pathdata,'AromCode');
 
 if ~exist("pathout","dir"); mkdir(pathout); end
