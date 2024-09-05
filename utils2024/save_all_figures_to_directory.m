@@ -14,7 +14,7 @@ for i=1:numel(figlist)
     if nargin == 2
         saveas(figlist(i),fullfile(dir_name,[title char(string(number(i))) '.fig']));
     elseif varargin{1}
-        saveas(figlist(i),fullfile(dir_name,[title char(string(number(i))) '.fig']));
+        saveas(figlist(i),fullfile(dir_name,[title char(string(number(i))) varargin{1}]));
     end
 end
 

@@ -10,7 +10,7 @@ v_freq = [400 600 900];
 window = 15; %11 pixels as described in paper
 stride = 1;
 w_kernel = [window, window];
-
+constant = 1; % 1.16 gives good results
 phaseExtrac = 'JO';
 tic;
 
@@ -149,7 +149,7 @@ for ii = 1 : numChannels
     freq = v_freq_best(ii); 
     med_wind = [my_obj.window];
     medf.grad_abs_3D(:,:,ii) = medfilt2(og.grad_abs_3D(:,:,ii),[med_wind med_wind],'symmetric');
-    medf.sws_abs_3D(:,:,ii) = 2*pi*freq ./ medf.grad_abs_3D (:, :, ii);
+    medf.sws_abs_3D(:,:,ii) = 2*pi*freq ./ medf.grad_abs_3D (:, :, ii) * constant;
 
 end
 
@@ -176,7 +176,7 @@ for ii = 1 : numChannels
     freq = v_freq(ii);
     avg_kernel = ones(7, 7) / 49;  % Create a 7x7 averaging filter kernel
     avef.grad_abs_3D(:,:,ii) = filter2(avg_kernel, og.grad_abs_3D(:,:,ii), 'same');
-    avef.sws_abs_3D(:,:,ii) = 2*pi*freq ./ avef.grad_abs_3D(:, :, ii);
+    avef.sws_abs_3D(:,:,ii) = 2*pi*freq ./ avef.grad_abs_3D(:, :, ii) * constant;
 end
 
 % PLOT AVERAGE FILT 
@@ -209,7 +209,7 @@ for ii = 1 : numChannels
 
     tv.grad_abs_3D(:,:,ii) = reshape(grad_tv, [ M N ] );
 
-    tv.sws_abs_3D(:,:,ii) = (2*pi*freq)./tv.grad_abs_3D(:,:,ii);
+    tv.sws_abs_3D(:,:,ii) = (2*pi*freq)./tv.grad_abs_3D(:,:,ii)* constant;
 
 end
 
@@ -268,7 +268,7 @@ clear tnv
 % 
 % end
 
-tnv.sws_abs_3D =  2*pi* reshape(v_freq_best, [1, 1, numChannels]) ./ tnv.grad_abs_3D; % more elegant
+tnv.sws_abs_3D =  2*pi* reshape(v_freq_best, [1, 1, numChannels]) ./ tnv.grad_abs_3D * constant; % more elegant
 
 
 % tnv.sws_abs_3D_big = bigImg(tnv.sws_abs_3D, pg_QRv1.sws_abs_3D);
@@ -326,20 +326,37 @@ bl_mask = mask_rect_v2(x, z, cx1b, cz, Lx, Lzb);
 br_mask = mask_rect_v2(x, z, cx2b, cz, Lx, Lzb);
 back = or(bl_mask, br_mask);
 
-figure, 
-
+figure('Position',[100 100 400 250]), 
+tiledlayout(1,2)
+nexttile,
 imagesc(xBm*mm,zBm*mm, Bmode, [-50 0])
-axis image
 % c =colorbar(t1,'westoutside');
 % colorbar
 colormap gray
 hold on
-contour(x*mm,z*mm,back);
-contour(x*mm,z*mm,inc);
+contour(x*mm,z*mm,back,1,'k--', 'LineWidth',1);
+contour(x*mm,z*mm,inc,1,'--', 'LineWidth',1);
 hold off
-title('Bmode')
+title('B-mode')
 xlabel('Lateral [mm]'), ylabel('Axial [mm]'),
+axis image
+ylim([4 46])
 
+t2= nexttile;
+imagesc(xBm*mm,zBm*mm, real(frame), [-1 1]*1e-5)
+% c =colorbar(t1,'westoutside');
+% colorbar
+colormap(t2,parula)
+% hold on
+% contour(x*mm,z*mm,back,1,'k--', 'LineWidth',1);
+% contour(x*mm,z*mm,inc,1,'--', 'LineWidth',1);
+% hold off
+title('Particle velocity')
+xlabel('Lateral [mm]'), ylabel('Axial [mm]'),
+axis image
+ylim([4 46])
+
+saveas(gcf,'./figs/Bm.png')
 %%
 % [back,inc] = getRegionMasks(x*mm,z*mm,cx,cz,L,d,L);
 gtInc = 3.65;
@@ -394,18 +411,15 @@ for ii = 1 : numChannels
     nexttile;
     imagesc(x*mm,z*mm,medf.sws_abs_3D(:,:,ii), caxis_sws), axis('tight')
     axis image
-%     rectangle('Position',[x0, z0,L,L], 'LineStyle','-', 'LineWidth',2)
-%     rectangle('Position',[xb1, z0,L/2,L], 'LineStyle','-', 'LineWidth',2)
-%     rectangle('Position',[xb2, z0,L/2,L], 'LineStyle','-', 'LineWidth',2)
 
-    % INCLUSION REGION METRICS
-    rectangle('Position',mm*[x0, z0,Lx,Lz],'LineWidth', lw), hold on;
-    % BACKGROUND REGION METRICS
-    % LEFT
-    rectangle('Position', mm*[xb1, z0b,Lx,Lzb],'EdgeColor','k','LineWidth',lw,'LineStyle','-');
-    % RIGHT
-    rectangle('Position', mm*[xb2, z0b,Lx,Lzb],'EdgeColor','k','LineWidth',lw,'LineStyle','-');
-
+    % % INCLUSION REGION METRICS
+    % rectangle('Position',mm*[x0, z0,Lx,Lz],'LineWidth', lw), hold on;
+    % % BACKGROUND REGION METRICS
+    % % LEFT
+    % rectangle('Position', mm*[xb1, z0b,Lx,Lzb],'EdgeColor','k','LineWidth',lw,'LineStyle','-');
+    % % RIGHT
+    % rectangle('Position', mm*[xb2, z0b,Lx,Lzb],'EdgeColor','k','LineWidth',lw,'LineStyle','-');
+    % 
 
     colormap ("turbo");
     title (['f = ', num2str(freq),'Hz'])
@@ -416,14 +430,14 @@ for ii = 1 : numChannels
         text(-35,22.5,'\bfPG', 'Rotation',90, ...
         'HorizontalAlignment', 'center', 'FontSize', fontText)
     end    
-    text(0,10,sprintf('\\bfCNR = %.2f', T.cnr(ii)), ...
-        'HorizontalAlignment', 'center', 'FontSize', fontText)
-    text(0,34, sprintf('\\bfSWS_{in} = %.2f \\pm %.2f', ...
-        T.mean_inc(ii), T.std_inc(ii)),...
-        'HorizontalAlignment', 'center', 'FontSize', fontText)
-    text(0,38, sprintf('\\bfSWS_{bg} = %.2f \\pm %.2f', ...
-        T.mean_back(ii), T.std_back(ii)),...
-        'HorizontalAlignment', 'center', 'FontSize', fontText)
+    % text(0,10,sprintf('\\bfCNR = %.2f', T.cnr(ii)), ...
+    %     'HorizontalAlignment', 'center', 'FontSize', fontText)
+    % text(0,34, sprintf('\\bfSWS_{in} = %.2f \\pm %.2f', ...
+    %     T.mean_inc(ii), T.std_inc(ii)),...
+    %     'HorizontalAlignment', 'center', 'FontSize', fontText)
+    % text(0,38, sprintf('\\bfSWS_{bg} = %.2f \\pm %.2f', ...
+    %     T.mean_back(ii), T.std_back(ii)),...
+    %     'HorizontalAlignment', 'center', 'FontSize', fontText)
     set(gca, 'FontSize',fontSize)
     % axis off
 
@@ -441,17 +455,14 @@ for ii = 1 : numChannels
     nexttile;
     imagesc(x*mm,z*mm,tv.sws_abs_3D(:,:,ii), caxis_sws), axis('tight')
     axis image
-%     rectangle('Position',[x0, z0,L,L], 'LineStyle','-', 'LineWidth',2)
-%     rectangle('Position',[xb1, z0,L/2,L], 'LineStyle','-', 'LineWidth',2)
-%     rectangle('Position',[xb2, z0,L/2,L], 'LineStyle','-', 'LineWidth',2)
 
-    % INCLUSION REGION METRICS
-    rectangle('Position',mm*[x0, z0,Lx,Lz],'LineWidth', lw), hold on;
-    % BACKGROUND REGION METRICS
-    % LEFT
-    rectangle('Position', mm*[xb1, z0b,Lx,Lzb],'EdgeColor','k','LineWidth',lw,'LineStyle','-');
-    % RIGHT
-    rectangle('Position', mm*[xb2, z0b,Lx,Lzb],'EdgeColor','k','LineWidth',lw,'LineStyle','-');
+    % % INCLUSION REGION METRICS
+    % rectangle('Position',mm*[x0, z0,Lx,Lz],'LineWidth', lw), hold on;
+    % % BACKGROUND REGION METRICS
+    % % LEFT
+    % rectangle('Position', mm*[xb1, z0b,Lx,Lzb],'EdgeColor','k','LineWidth',lw,'LineStyle','-');
+    % % RIGHT
+    % rectangle('Position', mm*[xb2, z0b,Lx,Lzb],'EdgeColor','k','LineWidth',lw,'LineStyle','-');
 
     colormap ("turbo");
     % xlabel('Lateral [mm]'),
@@ -461,14 +472,14 @@ for ii = 1 : numChannels
         'HorizontalAlignment', 'center', 'FontSize', fontText)
     end    % title (['PG-TV, f = ', num2str(freq),'Hz'])
     ylim(zlim_mm)
-    text(0,10,sprintf('\\bfCNR = %.2f', T.cnr(ii+3)), ...
-        'HorizontalAlignment', 'center', 'FontSize', fontText)
-    text(0,34, sprintf('\\bfSWS_{in} = %.2f \\pm %.2f', ...
-        T.mean_inc(ii+3), T.std_inc(ii+3)),...
-        'HorizontalAlignment', 'center', 'FontSize', fontText)
-    text(0,38, sprintf('\\bfSWS_{bg} = %.2f \\pm %.2f', ...
-        T.mean_back(ii+3), T.std_back(ii+3)),...
-        'HorizontalAlignment', 'center', 'FontSize', fontText)
+    % text(0,10,sprintf('\\bfCNR = %.2f', T.cnr(ii+3)), ...
+    %     'HorizontalAlignment', 'center', 'FontSize', fontText)
+    % text(0,34, sprintf('\\bfSWS_{in} = %.2f \\pm %.2f', ...
+    %     T.mean_inc(ii+3), T.std_inc(ii+3)),...
+    %     'HorizontalAlignment', 'center', 'FontSize', fontText)
+    % text(0,38, sprintf('\\bfSWS_{bg} = %.2f \\pm %.2f', ...
+    %     T.mean_back(ii+3), T.std_back(ii+3)),...
+    %     'HorizontalAlignment', 'center', 'FontSize', fontText)
     set(gca, 'FontSize',fontSize)
     % axis off
 end
@@ -483,17 +494,14 @@ for ii = 1 : numChannels
     nexttile;
     imagesc(x*mm,z*mm,tnv.sws_abs_3D(:,:,ii), caxis_sws), axis('tight')
     axis image
-%     rectangle('Position',[x0, z0,L,L], 'LineStyle','-', 'LineWidth',2)
-%     rectangle('Position',[xb1, z0,L/2,L], 'LineStyle','-', 'LineWidth',2)
-%     rectangle('Position',[xb2, z0,L/2,L], 'LineStyle','-', 'LineWidth',2)
 
-    % INCLUSION REGION METRICS
-    rectangle('Position',mm*[x0, z0,Lx,Lz],'LineWidth', lw), hold on;
-    % BACKGROUND REGION METRICS
-    % LEFT
-    rectangle('Position', mm*[xb1, z0b,Lx,Lzb],'EdgeColor','k','LineWidth',lw,'LineStyle','-');
-    % RIGHT
-    rectangle('Position', mm*[xb2, z0b,Lx,Lzb],'EdgeColor','k','LineWidth',lw,'LineStyle','-');
+    % % INCLUSION REGION METRICS
+    % rectangle('Position',mm*[x0, z0,Lx,Lz],'LineWidth', lw), hold on;
+    % % BACKGROUND REGION METRICS
+    % % LEFT
+    % rectangle('Position', mm*[xb1, z0b,Lx,Lzb],'EdgeColor','k','LineWidth',lw,'LineStyle','-');
+    % % RIGHT
+    % rectangle('Position', mm*[xb2, z0b,Lx,Lzb],'EdgeColor','k','LineWidth',lw,'LineStyle','-');
 
     colormap ("turbo");
     xlabel('Lateral [mm]'),
@@ -505,20 +513,23 @@ for ii = 1 : numChannels
     % title (['PG-TNV, f = ', num2str(freq),'Hz'])
 
     ylim(zlim_mm)
-    text(0,10,sprintf('\\bfCNR = %.2f', T.cnr(ii+6)), ...
-        'HorizontalAlignment', 'center', 'FontSize', fontText)
-    text(0,34, sprintf('\\bfSWS_{in} = %.2f \\pm %.2f', ...
-        T.mean_inc(ii+6), T.std_inc(ii+6)),...
-        'HorizontalAlignment', 'center', 'FontSize', fontText)
-    text(0,38, sprintf('\\bfSWS_{bg} = %.2f \\pm %.2f', ...
-        T.mean_back(ii+6), T.std_back(ii+6)),...
-        'HorizontalAlignment', 'center', 'FontSize', fontText)
+    % text(0,10,sprintf('\\bfCNR = %.2f', T.cnr(ii+6)), ...
+    %     'HorizontalAlignment', 'center', 'FontSize', fontText)
+    % text(0,34, sprintf('\\bfSWS_{in} = %.2f \\pm %.2f', ...
+    %     T.mean_inc(ii+6), T.std_inc(ii+6)),...
+    %     'HorizontalAlignment', 'center', 'FontSize', fontText)
+    % text(0,38, sprintf('\\bfSWS_{bg} = %.2f \\pm %.2f', ...
+    %     T.mean_back(ii+6), T.std_back(ii+6)),...
+    %     'HorizontalAlignment', 'center', 'FontSize', fontText)
 
     set(gca, 'FontSize',fontSize)
     % axis off
 end
 c = colorbar;
 c.Label.String = 'SWS [m/s]';
+
+% saveas(gcf,'./figs/SWSphantoms.png')
+
 
 %% Plots
 lw = 1.5;
@@ -574,98 +585,102 @@ ylim([1 7])
 title('CNR')
 xlabel('Frequency [Hz]')
 
+save_all_figures_to_directory('figs','fig','.svg')
+
+%%
+writetable(T,'inVivo.xlsx')
 %% =====================================================================
-%% TOTAL NUCLEAR VARIATION grid search
-M = my_obj.size_out(1);
-N = my_obj.size_out(2);
-
-% tau_vector = [0.001];
-% mu_vector = logspace(log10(0.1),log10(10^5),10); % logarithmic
-mu_vector = 10.^(3:0.5:4);
-tau_vector = 10.^(-3.5:0.5:-2.5);
-maxIter = 1000;
-stableIter = 50;
-tol = 10e-4; % tolerance error
-
-weightEstimators = ones(1, length(v_freq));
-
-
-% van quedando mu = 10^3 10^3.67
-
-% mu_vector = 10^3.5;
-% tau_vector = [0.1 0.05 0.01 0.005 0.001 0.0005 0.0001];
-
-
-list_data = [10 11 13];
-v_freq = [400 600 900];
-
-v_freq_best = v_freq;
-list_data_best = list_data;
-numChannels = length(v_freq_best);
-
-for u = 1:length(mu_vector)
-    bestmu = mu_vector(u);
-    for t = 1:length(tau_vector)
-        besttau = tau_vector(t);
-
-        clear tnv
-        [tnv.grad_abs_3D, cost, error, fid, reg] = pdo_den_wtnv(og.grad_abs_3D, bestmu, besttau, maxIter, tol, stableIter, weightEstimators); 
-
+% %% TOTAL NUCLEAR VARIATION grid search
+% M = my_obj.size_out(1);
+% N = my_obj.size_out(2);
+% 
+% % tau_vector = [0.001];
+% % mu_vector = logspace(log10(0.1),log10(10^5),10); % logarithmic
+% mu_vector = 10.^(3:0.5:4);
+% tau_vector = 10.^(-3.5:0.5:-2.5);
+% maxIter = 1000;
+% stableIter = 50;
+% tol = 10e-4; % tolerance error
+% 
+% weightEstimators = ones(1, length(v_freq));
+% 
+% 
+% % van quedando mu = 10^3 10^3.67
+% 
+% % mu_vector = 10^3.5;
+% % tau_vector = [0.1 0.05 0.01 0.005 0.001 0.0005 0.0001];
+% 
+% 
+% list_data = [10 11 13];
+% v_freq = [400 600 900];
+% 
+% v_freq_best = v_freq;
+% list_data_best = list_data;
+% numChannels = length(v_freq_best);
+% 
+% for u = 1:length(mu_vector)
+%     bestmu = mu_vector(u);
+%     for t = 1:length(tau_vector)
+%         besttau = tau_vector(t);
+% 
+%         clear tnv
+%         [tnv.grad_abs_3D, cost, error, fid, reg] = pdo_den_wtnv(og.grad_abs_3D, bestmu, besttau, maxIter, tol, stableIter, weightEstimators); 
+% 
+% %         for ii = 1 : numChannels
+% %         
+% %             freq = v_freq_best(ii);
+% %         
+% %             tnv.sws_abs_3D(:,:, ii) = (2*pi*freq)./tnv.grad_abs_3D(:,:,ii);
+% %         
+% %         end
+% 
+%         tnv.sws_abs_3D =  2*pi* reshape(v_freq_best, [1, 1, numChannels]) ./ tnv.grad_abs_3D; % more elegant
+% 
+%         caxis_sws = [1 4];
+%         figure, % SWS
+%         sgtitle(['SWS TNV, \mu=10^{', num2str(log10(bestmu)), '} \tau=10^{', num2str(log10(besttau)),'}']);
+%         set(gcf, 'units', 'Normalized', 'Position', [0 0 0.55 0.55])
 %         for ii = 1 : numChannels
-%         
 %             freq = v_freq_best(ii);
-%         
-%             tnv.sws_abs_3D(:,:, ii) = (2*pi*freq)./tnv.grad_abs_3D(:,:,ii);
-%         
+%             subplot (2, 3, ii)
+%             imagesc(tnv.sws_abs_3D(:,:,ii), caxis_sws), axis('tight')
+% %             colormap ("jet");
+%             colormap ("turbo");
+%             xlabel('Lateral [cm]'), ylabel('Axial[cm]'), colorbar
+%             title (['SWS f_v = ', num2str(freq) ])
+% 
 %         end
-
-        tnv.sws_abs_3D =  2*pi* reshape(v_freq_best, [1, 1, numChannels]) ./ tnv.grad_abs_3D; % more elegant
-
-        caxis_sws = [1 4];
-        figure, % SWS
-        sgtitle(['SWS TNV, \mu=10^{', num2str(log10(bestmu)), '} \tau=10^{', num2str(log10(besttau)),'}']);
-        set(gcf, 'units', 'Normalized', 'Position', [0 0 0.55 0.55])
-        for ii = 1 : numChannels
-            freq = v_freq_best(ii);
-            subplot (2, 3, ii)
-            imagesc(tnv.sws_abs_3D(:,:,ii), caxis_sws), axis('tight')
-%             colormap ("jet");
-            colormap ("turbo");
-            xlabel('Lateral [cm]'), ylabel('Axial[cm]'), colorbar
-            title (['SWS f_v = ', num2str(freq) ])
-        
-        end
-
-    end
-end
+% 
+%     end
+% end
 
 
 
-%% PLOT TNV grid search
-
-caxis_sws = [0 5];
-figure, % SWS
-sgtitle('SWS TNV')
-set(gcf, 'units', 'Normalized', 'Position', [0 0 0.55 0.55])
-for ii = 1 : numChannels
-    freq = v_freq_best(ii);
-    subplot (2, 3, ii)
-    imagesc(tnv.sws_abs_3D(:,:,ii), caxis_sws), axis('tight')
-    colormap ("jet");
+% %% PLOT TNV grid search
+% 
+% caxis_sws = [0 5];
+% figure, % SWS
+% sgtitle('SWS TNV')
+% set(gcf, 'units', 'Normalized', 'Position', [0 0 0.55 0.55])
+% for ii = 1 : numChannels
+%     freq = v_freq_best(ii);
+%     subplot (2, 3, ii)
+%     imagesc(tnv.sws_abs_3D(:,:,ii), caxis_sws), axis('tight')
+%     colormap ("jet");
+% %     colormap ("turbo");
+%     xlabel('Lateral [cm]'), ylabel('Axial[cm]'), colorbar
+%     title (['SWS f_v = ', num2str(freq) ])
+% 
+% end
+% 
+% figure, % grad phi
+% sgtitle('|\nabla\phi| TNV')
+% for ii = 1 : numChannels
+%     freq = v_freq_best(ii);
+%     subplot (2, 3, ii)
+%     imagesc(tnv.grad_abs_3D(:,:,ii))
 %     colormap ("turbo");
-    xlabel('Lateral [cm]'), ylabel('Axial[cm]'), colorbar
-    title (['SWS f_v = ', num2str(freq) ])
-
-end
-
-figure, % grad phi
-sgtitle('|\nabla\phi| TNV')
-for ii = 1 : numChannels
-    freq = v_freq_best(ii);
-    subplot (2, 3, ii)
-    imagesc(tnv.grad_abs_3D(:,:,ii))
-    colormap ("turbo");
-    xlabel('Lateral [cm]'), ylabel('Axial[cm]'), colorbar
-    title (['\nabla\phi f_v = ', num2str(freq) ])
-
-end
+%     xlabel('Lateral [cm]'), ylabel('Axial[cm]'), colorbar
+%     title (['\nabla\phi f_v = ', num2str(freq) ])
+% 
+% end
