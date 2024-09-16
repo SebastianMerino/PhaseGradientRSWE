@@ -14,8 +14,8 @@ constant = 1; % 1.16 gives good results
 phaseExtrac = 'JO';
 tic;
 
-% pathdata = 'C:\Users\sebas\Documents\MATLAB\DataProCiencia\Elastrography\reverberant\CIRS_phantom\L7-4';
-pathdata = 'C:\Users\smerino.C084288\Documents\MATLAB\Datasets\RSWE-PG\Data_3_PUCP\CIRS_phantom\L7-4';
+pathdata = 'C:\Users\sebas\Documents\MATLAB\DataProCiencia\Elastrography\reverberant\CIRS_phantom\L7-4';
+% pathdata = 'C:\Users\smerino.C084288\Documents\MATLAB\Datasets\RSWE-PG\Data_3_PUCP\CIRS_phantom\L7-4';
 pathout = fullfile(pathdata,'AromCode');
 
 if ~exist("pathout","dir"); mkdir(pathout); end
@@ -533,16 +533,21 @@ c.Label.String = 'SWS [m/s]';
 
 
 %% Plots
+colors = [0.8,0.2,0.2; 0.2,0.2,0.8; 0.1 0.7 0.1];
+
 lw = 1.5;
 
-figure,
+figure('Position', [100 100 400 320]),
 hold on
 errorbar(v_freq_best,T.mean_inc(1:3),T.std_inc(1:3), 'ro-', ...
-    "MarkerFaceColor",'r', 'LineWidth', lw)
+    'MarkerFaceColor',colors(1,:), ...
+    'Color',colors(1,:), 'LineWidth', lw)
 errorbar(v_freq_best,T.mean_inc(4:6),T.std_inc(4:6), 'bs-', ...
-    "MarkerFaceColor",'b', 'LineWidth', lw)
+    'MarkerFaceColor',colors(2,:), ...
+    'Color',colors(2,:), 'LineWidth', lw)
 errorbar(v_freq_best,T.mean_inc(7:9),T.std_inc(7:9), 'k*-', ...
-    "MarkerFaceColor",'k', 'LineWidth', lw)
+    'MarkerFaceColor',colors(3,:), ...
+    'Color',colors(3,:), 'LineWidth', lw)
 yline(gtInc, 'k--', 'GT_{in}'); % 'k--' denotes a black dashed line
 % hold off
 % legend('PG','PG-TV','PG-TNV', 'Location','northwest')
@@ -555,11 +560,14 @@ yline(gtInc, 'k--', 'GT_{in}'); % 'k--' denotes a black dashed line
 % figure,
 % hold on
 errorbar(v_freq_best,T.mean_back(1:3),T.std_back(1:3), 'ro-', ...
-    "MarkerFaceColor",'r', 'LineWidth', lw)
+    'MarkerFaceColor',colors(1,:), ...
+    'Color',colors(1,:), 'LineWidth', lw)
 errorbar(v_freq_best,T.mean_back(4:6),T.std_back(4:6),  'bs-', ...
-    "MarkerFaceColor",'b', 'LineWidth', lw)
+    'MarkerFaceColor',colors(2,:), ...
+    'Color',colors(2,:), 'LineWidth', lw)
 errorbar(v_freq_best,T.mean_back(7:9),T.std_back(7:9), 'k*-', ...
-    "MarkerFaceColor",'k', 'LineWidth', lw)
+    'MarkerFaceColor',colors(3,:), ...
+    'Color',colors(3,:), 'LineWidth', lw)
 yline(gtBack, 'k--', 'GT_{bg}'); % 'k--' denotes a black dashed line
 hold off
 legend('PG','PG-TV','PG-TNV', 'Location','northwest')
@@ -569,20 +577,24 @@ ylim([1.8,4.8])
 title('SWS dispersion')
 ylabel('SWS [m/s]'), xlabel('Frequency [Hz]')
 
-figure,
+figure('Position', [100 100 400 240]),
 hold on
 plot(v_freq_best,T.cnr(1:3), 'ro-', ...
-    "MarkerFaceColor",'r', 'LineWidth', lw)
+    'MarkerFaceColor',colors(1,:), ...
+    'Color',colors(1,:), 'LineWidth', lw)
 plot(v_freq_best,T.cnr(4:6),'bs-', ...
-    "MarkerFaceColor",'b', 'LineWidth', lw)
+    'MarkerFaceColor',colors(2,:), ...
+    'Color',colors(2,:), 'LineWidth', lw)
 plot(v_freq_best,T.cnr(7:9), 'k*-', ...
-    "MarkerFaceColor",'k', 'LineWidth', lw)
+    'MarkerFaceColor',colors(3,:), ...
+    'Color',colors(3,:), 'LineWidth', lw)
 
 hold off
 legend('PG','PG-TV','PG-TNV', 'Location','northwest')
 grid on
 xlim([300 1000])
-ylim([1 7])
+ylim([0.3 30])
+set(gca, 'YScale', 'log')
 title('CNR')
 xlabel('Frequency [Hz]')
 
